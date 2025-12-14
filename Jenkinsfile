@@ -1,51 +1,61 @@
 pipeline {
     agent any
 
+    // 1. PARAMETERS: These appear when you click "Build with Parameters"
+    parameters {
+        choice(name: 'DEPLOY_ENV', choices: ['Staging', 'Production'], description: 'Where should we deploy?')
+        booleanParam(name: 'SKIP_TESTS', defaultValue: false, description: 'Check to skip unit tests (Not recommended!)')
+    }
+
     stages {
+        stage('Initialize') {
+            steps {
+                // 2. CLEANUP: Start with a fresh folder
+                cleanWs() 
+                echo "Starting build for environment: ${params.DEPLOY_ENV}"
+            }
+        }
+
         stage('Build') {
             steps {
-                echo 'Building Application...'
-                // simpler simulation of a build
-                sh 'sleep 2' 
+                echo 'Compiling...'
+                // Simulate creating a real file (The "Artifact")
+                sh 'echo "Application Version 1.0" > app-release.txt'
+                sh 'date >> app-release.txt'
             }
         }
+
         stage('Test') {
+            // CONDITIONAL: Only run if SKIP_TESTS is unchecked
+            when {
+                expression { return params.SKIP_TESTS == false }
+            }
             steps {
-                echo 'Running Tests...'
-                // REMOVED 'exit 1' so it passes now!
-                sh 'sleep 2'
+                echo 'Running Unit Tests...'
+                sh 'sleep 2' // Simulate work
             }
         }
-        
-        // This stage will PAUSE the pipeline until you click "Proceed"
-        stage('Approval') {
-            steps {
-                input message: 'Tests passed. Deploy to Production?', ok: 'Yes, Deploy!'
-            }
-        }
-        
+
         stage('Deploy') {
             steps {
-                echo 'Deploying to Production Server...'
+                echo "Deploying to ${params.DEPLOY_ENV}..."
+                
+                script {
+                    if (params.DEPLOY_ENV == 'Production') {
+                        // Double check for Production
+                        input message: 'Are you sure you want to deploy to PROD?', ok: 'Yes, Go!'
+                    }
+                }
             }
         }
     }
-    
+
     post {
-        failure {
-            emailext (
-                subject: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
-                body: "Check console: ${env.BUILD_URL}",
-                to: "adityazade69@gmail.com" // Ensure this matches your admin email
-            )
-        }
         success {
-             // Optional: Send an email when deployment is successful
-             emailext (
-                subject: "DEPLOYED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
-                body: "The application has been successfully deployed.",
-                to: "adityazade69@gmail.com"
-            )
+            // 3. ARCHIVE: Save the 'app-release.txt' file so we can download it from the UI
+            archiveArtifacts artifacts: 'app-release.txt', followSymlinks: false
+            
+            echo "Build Successful! Artifacts archived."
         }
     }
 }
