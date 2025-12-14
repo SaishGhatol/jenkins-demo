@@ -4,15 +4,29 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                echo 'Building...'
+                echo 'Building Application...'
+                // simpler simulation of a build
+                sh 'sleep 2' 
             }
         }
         stage('Test') {
             steps {
-                echo 'Testing...'
-                // This command simulates a failure!
-                // Remove 'exit 1' to make the build pass.
-                sh 'exit 1' 
+                echo 'Running Tests...'
+                // REMOVED 'exit 1' so it passes now!
+                sh 'sleep 2'
+            }
+        }
+        
+        // This stage will PAUSE the pipeline until you click "Proceed"
+        stage('Approval') {
+            steps {
+                input message: 'Tests passed. Deploy to Production?', ok: 'Yes, Deploy!'
+            }
+        }
+        
+        stage('Deploy') {
+            steps {
+                echo 'Deploying to Production Server...'
             }
         }
     }
@@ -21,13 +35,17 @@ pipeline {
         failure {
             emailext (
                 subject: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
-                body: """<p>BUILD FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]':</p>
-                         <p>Check console output at: <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p>""",
-                to: "adityazade69@gmail.com"  // CHANGE THIS to your actual email
+                body: "Check console: ${env.BUILD_URL}",
+                to: "adityazade69@gmail.com" // Ensure this matches your admin email
             )
         }
         success {
-            echo 'Build succeeded. No email needed.'
+             // Optional: Send an email when deployment is successful
+             emailext (
+                subject: "DEPLOYED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
+                body: "The application has been successfully deployed.",
+                to: "adityazade69@gmail.com"
+            )
         }
     }
 }
