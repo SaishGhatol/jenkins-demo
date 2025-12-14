@@ -23,7 +23,7 @@ pipeline {
                 subject: "FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
                 body: """<p>BUILD FAILED: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]':</p>
                          <p>Check console output at: <a href='${env.BUILD_URL}'>${env.BUILD_URL}</a></p>""",
-                to: "your-email@example.com"  // CHANGE THIS to your actual email
+                to: "saishghatol094@gmail.com"  // CHANGE THIS to your actual email
             )
         }
         success {
